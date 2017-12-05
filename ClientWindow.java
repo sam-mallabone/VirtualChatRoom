@@ -35,40 +35,25 @@ public class ClientWindow extends JFrame {
 	private JScrollPane scrollPane;
 	private JTextField textField;
 	private JButton buttonSend;
+	private JComboBox comboBox;
+	private JLabel labelRoom;
 	private Socket socket;
 	private boolean connected;
 	private PrintWriter pw;
 	private JButton styleButton;
 	private JLabel styleLabel;
-	final static String DEFAULT = "Metal";
-	final static String THEME = "Test";
 	
 	
 	public ClientWindow() {
 		
-		initLookAndFeel();
 		JFrame.setDefaultLookAndFeelDecorated(true);
 		this.connected = false;
 		this.setSize(950, 600);
 		this.setTitle("ChatRoom");
-
-//		labelIP = new JLabel("IP: ");
-//		paneltop.add(labelIP);
-//		textIP = new JTextField("127.0.0.1",10);
-//		paneltop.add(textIP);
-//		labelPort = new JLabel("Port: ");
-//		paneltop.add(labelPort);
-//		textPort = new JTextField(4);
-//		paneltop.add(textPort);
-//		buttonConnection = new JButton("Connect");
-//		Connection connectionAction = new Connection();
-//		buttonConnection.addActionListener(connectionAction);
-//		paneltop.add(buttonConnection);
-//		buttonDisconnection = new JButton("Disconnect");
-//		Disconnection disconnectAction = new Disconnection();
-//		buttonDisconnection.addActionListener(disconnectAction);
-//		buttonDisconnection.setEnabled(false);
-//		paneltop.add(buttonDisconnection);
+		
+		final String[] chatRooms = {"Chat Room 1", "Chat Room 2", "Chat Room 3"};
+		comboBox = new JComboBox(chatRooms);
+		
 		
 		JPanel panelTop = new JPanel();
 		panelTop.setLayout(new FlowLayout());
@@ -76,10 +61,10 @@ public class ClientWindow extends JFrame {
 		panelTop.add(labelName);
 		textName = new JTextField("Andy",5);
 		panelTop.add(textName);
-		styleLabel = new JLabel("Style");
-		styleButton = new JButton("Style");
+		labelRoom = new JLabel("Select Chat Room: ");
+		panelTop.add(labelRoom);
+		panelTop.add(comboBox);
 		
-		panelTop.add(styleButton);
 		
 		
 		
@@ -221,7 +206,11 @@ public class ClientWindow extends JFrame {
 				//hard coded port and IP for now
 				//********************************************************
 				IP = "127.0.0.1";
-				port = 2020;
+				// retrieve properport from combobox
+				String x = comboBox.toString();
+				String y[] = x.split("Chat Room ", 2);
+				String numb = "202" + y[1].charAt(0);
+				port = Integer.parseInt(numb) - 1;
 				socket = new Socket(IP,port);
 				if(socket.isConnected()){
 					System.out.println("successfully connected");
@@ -249,12 +238,12 @@ public class ClientWindow extends JFrame {
 		
 		@Override
 		public void actionPerformed(ActionEvent e) {
-			if(connected){
+			if (connected) {
 				try {
 					pw.println("shutdown");
 					pw.flush();
 					socket.close();
-					if(socket.isClosed()){
+					if (socket.isClosed()) {
 						connected = false;
 						buttonConnection.setEnabled(true);
 						buttonDisconnection.setEnabled(false);
@@ -266,88 +255,5 @@ public class ClientWindow extends JFrame {
 		}
 		
 	}
-
-//	public void setStyleButton(ActionEvent e) {
-//		numClicks++;
-//		label.setText(labelPrefix + numClicks);
-//	}
-	
-	private static void initLookAndFeel() {
-		String lookAndFeel;
-		
-		if (DEFAULT != null) {
-			if (DEFAULT.equals("Metal")) {
-				lookAndFeel = UIManager.getCrossPlatformLookAndFeelClassName();
-				//  an alternative way to set the Metal L&F is to replace the
-				// previous line with:
-				// lookAndFeel = "javax.swing.plaf.metal.MetalLookAndFeel";
-				
-			}
-			
-			else if (DEFAULT.equals("System")) {
-				lookAndFeel = UIManager.getSystemLookAndFeelClassName();
-			}
-			
-			else if (DEFAULT.equals("Motif")) {
-				lookAndFeel = "com.sun.java.swing.plaf.motif.MotifLookAndFeel";
-			}
-			
-			else if (DEFAULT.equals("GTK")) {
-				lookAndFeel = "com.sun.java.swing.plaf.gtk.GTKLookAndFeel";
-			}
-			
-			else {
-				System.err.println("Unexpected value of LOOKANDFEEL specified: "
-						+ DEFAULT);
-				lookAndFeel = UIManager.getCrossPlatformLookAndFeelClassName();
-			}
-			
-			try {
-				
-				
-				UIManager.setLookAndFeel(lookAndFeel);
-				
-				// If L&F = "Metal", set the theme
-				
-				if (DEFAULT.equals("Metal")) {
-					if (THEME.equals("DefaultMetal"))
-						MetalLookAndFeel.setCurrentTheme(new DefaultMetalTheme());
-					else if (THEME.equals("Ocean"))
-						MetalLookAndFeel.setCurrentTheme(new OceanTheme());
-					else
-						return;
-					
-					UIManager.setLookAndFeel(new MetalLookAndFeel());
-				}
-				
-				
-				
-				
-			}
-			
-			catch (ClassNotFoundException e) {
-				System.err.println("Couldn't find class for specified look and feel:"
-						+ lookAndFeel);
-				System.err.println("Did you include the L&F library in the class path?");
-				System.err.println("Using the default look and feel.");
-			}
-			
-			catch (UnsupportedLookAndFeelException e) {
-				System.err.println("Can't use the specified look and feel ("
-						+ lookAndFeel
-						+ ") on this platform.");
-				System.err.println("Using the default look and feel.");
-			}
-			
-			catch (Exception e) {
-				System.err.println("Couldn't get specified look and feel ("
-						+ lookAndFeel
-						+ "), for some reason.");
-				System.err.println("Using the default look and feel.");
-				e.printStackTrace();
-			}
-		}
-	}
-	
 	
 }
