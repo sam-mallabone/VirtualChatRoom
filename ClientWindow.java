@@ -18,6 +18,7 @@ import java.net.UnknownHostException;
 import java.text.DateFormat;
 import java.util.Date;
 import java.util.Locale;
+import java.time.LocalDateTime;
 
 public class ClientWindow extends JFrame {
 	
@@ -182,9 +183,11 @@ public class ClientWindow extends JFrame {
 					}
 					
 					
-					Date date = new Date();
-					DateFormat df = DateFormat.getTimeInstance(DateFormat.LONG,Locale.FRANCE);
-					textArea.append(df.format(date) + ":\n");
+					// Date date = new Date();
+					// DateFormat df = DateFormat.getTimeInstance(DateFormat.LONG,Locale.CANADA);
+					// textArea.append(df.format(date) + ":\n");
+					LocalDateTime dt = LocalDateTime.now();
+					textArea.append(dt + ":\n");
 					textArea.append(br.readLine() + '\n');
 				}
 			} catch (IOException e) {
