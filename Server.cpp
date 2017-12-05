@@ -8,6 +8,7 @@
 #include "socket.h"
 #include <vector>
 #include "Semaphore.h"
+#include <algorithm>
 
 using namespace Sync;
 
@@ -19,7 +20,7 @@ void TFunction(Socket sock, int port, std::vector<Socket> &clientSockets) {
     Semaphore protect(portstr);
     //passed to this function is a socket and an array of sockets by reference
     try{
-        std::cout << "A thread was connected" << std::endl;
+        std::cout << "A thread was connected on port "<< port << std::endl;
         ByteArray ba("Will be removed");
         int j = sock.Read(ba);
         std::string myname = ba.ToString();
@@ -27,7 +28,18 @@ void TFunction(Socket sock, int port, std::vector<Socket> &clientSockets) {
             ByteArray receivedBa("Will be removed");
             sock.Read(receivedBa);
             std::string recStr = receivedBa.ToString();
-            std::cout << "Messaged received: " << recStr << std::endl;
+            std::cout << "Messaged received: " << recStr << "on port "<< port << std::endl;
+            if(recStr == "shutdown\n") {
+                //get access to semaphore
+                protect.Wait();
+                //remove this socket from the client sockets vector
+                clientSockets.erase(std::remove(clientSockets.begin(), clientSockets.end(), sock), clientSockets.end());
+                //release the semaphore
+                protect.Signal();
+                //break out of the loop
+                std::cout<< "notice to shutdown" << std::endl;
+                break;
+            }
             //get the semaphore so thread can go into critical area
             protect.Wait();
             for(int i = 0; i < clientSockets.size(); i++) {
@@ -41,6 +53,10 @@ void TFunction(Socket sock, int port, std::vector<Socket> &clientSockets) {
     catch(std::string &s) {
         std::cout << s << std::endl;
     }
+    catch(std::exception &e){
+        std:: cout<< e.what() << std::endl;
+    }
+    std::cout<<"exiting a thread on port " << port << std::endl;
 
 }
 

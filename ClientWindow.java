@@ -105,7 +105,7 @@ public class ClientWindow extends JFrame {
 		buttonSend.setEnabled(false);
 		panelBottom.add(buttonSend);
 		buttonConnection = new JButton("Connect");
-		Connection connectionAction = new Connection();
+		Connection connectionAction = new Connection(textArea);
 		buttonConnection.addActionListener(connectionAction);
 		panelBottom.add(buttonConnection);
 		buttonDisconnection = new JButton("Disconnect");
@@ -135,6 +135,7 @@ public class ClientWindow extends JFrame {
 							pw.println("shutdown");
 							pw.flush();
 							socket.close();
+							
 						}
 					} catch (IOException e1) {
 						e1.printStackTrace();
@@ -197,10 +198,17 @@ public class ClientWindow extends JFrame {
 	
 	
 	class Connection implements ActionListener {
+		JTextArea ta;
+
+		Connection(JTextArea ta){
+			this.ta = ta;
+		} 
 		
 		@Override
 		public void actionPerformed(ActionEvent e) {
 			try {
+				//clear the current text within the JTextArea
+				this.ta.setText("");
 				String IP;
 				int port;
 				//hard coded port and IP for now
