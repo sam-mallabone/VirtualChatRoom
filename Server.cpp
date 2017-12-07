@@ -29,10 +29,12 @@ private:
     int port;
 
     //reference to vector of sockets
-    std::vector<Socket> clientSockets;
+    std::vector<SocketThread*> &clientSocketThreads;
+
+    int chatRoom;
 public:
-    SocketThread(Socket& socket, bool& terminate, int port, std::vector<Socket> &clientSockets)
-    : socket(socket), terminate(terminate), port(port), clientSockets(clientSockets)
+    SocketThread(Socket& socket, bool& terminate, int port, std::vector<SocketThread*> &clientSocketThreads)
+    : socket(socket), terminate(terminate), port(port), clientSocketThreads(clientSocketThreads)
     {}
 
     ~SocketThread()
@@ -43,6 +45,11 @@ public:
         return socket;
     }
 
+    const int GetChatRoom()
+    {
+        return chatRoom;
+    }
+
     virtual long ThreadMain()
     {
     //first get a reference to the semaphore
@@ -51,9 +58,12 @@ public:
     Semaphore protect(portstr);
     //passed to this function is a socket and an array of sockets by reference
     try{
-        std::cout << "A thread was connected on port "<< port << std::endl;
+        //std::cout << "A thread was connected on port "<< port << std::endl;
         socket.Read(data);
-        std::string myname = data.ToString();
+        std::string chatRoomNum = data.ToString();
+        std::cout << chatRoomNum << std::endl;
+        chatRoom = std::stoi(chatRoomNum);
+        std::cout << chatRoom << std::endl;
         while(!terminate) {
             int j = socket.Read(data);
             if(j == 0){
@@ -61,23 +71,34 @@ public:
             }
             std::cout << "J: " << j << std::endl;
             std::string recStr = data.ToString();
-            std::cout << "Messaged received: " << recStr << "on port "<< port << std::endl;
+            //std::cout << "Messaged received: " << recStr << "on port "<< port << std::endl;
             if(recStr == "shutdown\n") {
                 //get access to semaphore
                 protect.Wait();
                 //remove this socket from the client sockets vector
-                clientSockets.erase(std::remove(clientSockets.begin(), clientSockets.end(), socket), clientSockets.end());
+                clientSocketThreads.erase(std::remove(clientSocketThreads.begin(), clientSocketThreads.end(), this), clientSocketThreads.end());
                 //release the semaphore
                 protect.Signal();
                 //break out of the loop
                 std::cout<< "notice to shutdown" << std::endl;
                 break;
             }
+            if(recStr[0]=='/'){
+                std::string chatStr = recStr.substr(1, recStr.size() - 1);
+                chatRoom = std::stoi(chatStr);
+                std::cout << chatRoom << std::endl;
+                continue;
+            }
             //get the semaphore so thread can go into critical area
             protect.Wait();
-            for(int i = 0; i < clientSockets.size(); i++) {
-                ByteArray sendBa(recStr);
-                clientSockets[i].Write(sendBa);
+            for(int i = 0; i < clientSocketThreads.size(); i++) {
+                SocketThread* clientSocketThread = clientSocketThreads[i];
+                if (clientSocketThread->GetChatRoom() == chatRoom)
+                {
+                    Socket& clientSocket = clientSocketThread->GetSocket();
+                    ByteArray sendBa(recStr);
+                    clientSocket.Write(sendBa);
+                }
             }
             protect.Signal();
             //Release semaphore here so other process can get it
@@ -98,13 +119,13 @@ class ServerThread : public Thread
 {
 private:
     SocketServer& server;
-    std::vector<Socket> clientSockets;
     std::vector<SocketThread*> socketThreads;
     bool terminate = false;
     int port;
+    int chatNum;
 public:
-    ServerThread(SocketServer& server, int port)
-    : server(server), port(port)
+    ServerThread(SocketServer& server, int port, int chatNum)
+    : server(server), port(port), chatNum(chatNum)
     {}
 
     ~ServerThread()
@@ -135,16 +156,19 @@ public:
             try
             {
                 std::string portstr = std::to_string(port);
+                std::cout << "Waiting for a client" <<std::endl;
                 Semaphore protect(portstr, 1, true);
+                std::string numberOfChats = std::to_string(chatNum) + '\n';
+                ByteArray ba(numberOfChats); 
                 // Wait for a client socket connection
-                std::cout<<"I get here in server" << std::endl;
                 Socket sock = server.Accept();
+                sock.Write(ba);
                 Socket* newConnection = new Socket(sock);
 
                 // Pass a reference to this pointer into a new socket thread
                 Socket& socketReference = *newConnection;
-                clientSockets.push_back(sock);
-                socketThreads.push_back(new SocketThread(socketReference, terminate, port, std::ref(clientSockets)));
+                //clientSockets.push_back(sock);
+                socketThreads.push_back(new SocketThread(socketReference, terminate, port, std::ref(socketThreads)));
             }
             catch (TerminationException terminationException)
             {
@@ -162,33 +186,18 @@ public:
 
 int main(void) {
     int port = 2020;
-    int numberOfRooms = 7;
+    int numberOfRooms;
     std::cout << "I am the Server" << std::endl;
+    std::cout << "How many chat rooms would you like? Please enter an int" << std::endl;
+    std::cin >> numberOfRooms;
     std::cout << "Please type done to end the Server" << std::endl;
-    //std::cout.flush();
-    std::vector<SocketServer> serverSockets;
-    // for(int i = 0; i < numberOfRooms; i++){
-    //     SocketServer server(port);
-    //     serverSockets.push_back(server);
-    //     ServerThread st(server, port);
-    //     port++;
-    // }
-    //cinWaiter.Wait();
-    //std::cin.get();
-    //server.Shutdown();
     SocketServer server(port);
-    ServerThread st(server, port);
+    ServerThread st(server, port, numberOfRooms);
     while(true){
         std::string stopCommand;
-        std::cout << "to stop all the server's enter the command: stop" << std::endl;
-        
         getline(std::cin, stopCommand);
-        std::cout << "command: " << stopCommand << std::endl;
         if(stopCommand == "done"){
             std::cout<< "I was told to stop" << std::endl;
-            // for(int j = 0; j < numberOfRooms; j++){
-            //     serverSockets[j].Shutdown();
-            // }
             server.Shutdown();
             
             break;

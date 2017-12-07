@@ -39,6 +39,7 @@ public class ClientWindow extends JFrame {
 	private JLabel labelRoom;
 	private Socket socket;
 	private boolean connected;
+	private boolean initialConnection;
 	private PrintWriter pw;
 	private JButton styleButton;
 	private JLabel styleLabel;
@@ -48,10 +49,11 @@ public class ClientWindow extends JFrame {
 		
 		JFrame.setDefaultLookAndFeelDecorated(true);
 		this.connected = false;
+		this.initialConnection = true;
 		this.setSize(950, 600);
 		this.setTitle("ChatRoom");
 		
-		final String[] chatRooms = {"Chat Room 1", "Chat Room 2", "Chat Room 3"};
+		final String[] chatRooms = {"Please Connect First"};
 		comboBox = new JComboBox(chatRooms);
 		
 		
@@ -110,6 +112,22 @@ public class ClientWindow extends JFrame {
 		buttonDisconnection.addActionListener(disconnectAction);
 		buttonDisconnection.setEnabled(false);
 		panelBottom.add(buttonDisconnection);
+		//ChatRoomChange chatRoomChange = new ChatRoomChange();
+		comboBox.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e){
+				System.out.println("I changed");
+				if(!initialConnection){
+				System.out.println("In here");
+				String numb = String.valueOf(comboBox.getSelectedItem());
+				int number;
+				String mynum = numb.split(" ")[2];
+				number = Integer.parseInt(mynum);
+				String sendStr = "/" + number;
+				pw.println(sendStr);
+				textArea.setText("");
+				}
+			}
+		});
 		textField.addKeyListener(new KeyAdapter() {
 			public void keyPressed(KeyEvent ke){
 				if(ke.getKeyChar()==KeyEvent.VK_ENTER){
@@ -135,7 +153,7 @@ public class ClientWindow extends JFrame {
 							
 						}
 					} catch (IOException e1) {
-						e1.printStackTrace();
+						System.out.println("Socket is closed");
 					}
 				}
 				System.out.println("The client program has been closed");
@@ -150,10 +168,13 @@ public class ClientWindow extends JFrame {
 	
 	class ClientReceive extends Thread {
 		
+		private int roomNumber;
+		ClientReceive(int num){
+			this.roomNumber = num;
+		}
 		public void run() {
 			try {
 				
-				pw.println(textName.getText());
 				BufferedReader br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 				
 				while (true) {
@@ -163,6 +184,17 @@ public class ClientWindow extends JFrame {
 					if(socket.isClosed()){
 						System.out.println("The client thread has been closed");
 						break;
+					}
+					if(initialConnection){
+						pw.println(this.roomNumber);
+						int numRooms = Integer.parseInt(br.readLine());
+						comboBox.removeAllItems();
+						for(int i = 0; i < numRooms; i++){
+							String strroom = "Chat Room " + i;
+							comboBox.addItem(strroom);
+						}
+						initialConnection = false;
+						continue;
 					}
 					
 					
@@ -174,7 +206,7 @@ public class ClientWindow extends JFrame {
 					textArea.append(br.readLine() + '\n');
 				}
 			} catch (IOException e) {
-				e.printStackTrace();
+				System.out.println("Server is not running");
 			}
 		}
 	}
@@ -185,9 +217,12 @@ public class ClientWindow extends JFrame {
 		@Override
 		public void actionPerformed(ActionEvent e) {
 			if(connected){
-				pw.println(textName.getText() + ": " + textField.getText());
-				pw.flush();
-				textField.setText("");
+					pw.println(textName.getText() + ": " + textField.getText());
+					pw.flush();
+					textField.setText("");	
+			}
+			else {
+				System.out.println("Do I ever get here");
 			}
 		}
 		
@@ -212,10 +247,20 @@ public class ClientWindow extends JFrame {
 				//********************************************************
 				IP = "127.0.0.1";
 				// retrieve properport from combobox
-				String x = comboBox.toString();
-				String y[] = x.split("Chat Room ", 2);
-				String numb = "202" + y[1].charAt(0);
-				port = Integer.parseInt(numb) - 1;
+				// String x = comboBox.toString();
+				// String y[] = x.split("Chat Room ", 2);
+				// String numb =  y[1].charAt(0).toString();
+				String numb = String.valueOf(comboBox.getSelectedItem());
+				int number;
+				String mynum = numb.split(" ")[2];
+				port = 2020;
+				if(initialConnection){
+					System.out.println("In");
+					number = 1;
+				}
+				else{
+				    number = Integer.parseInt(mynum);
+				}
 				socket = new Socket(IP,port);
 				if(socket.isConnected()){
 					System.out.println("successfully connected");
@@ -224,12 +269,12 @@ public class ClientWindow extends JFrame {
 					buttonDisconnection.setEnabled(true);
 					buttonSend.setEnabled(true);
 					pw = new PrintWriter(socket.getOutputStream(), true);
-					new ClientReceive().start();
+					new ClientReceive(number).start();
 				}
 			} catch (UnknownHostException e1) {
-				System.out.println("Please enter the correct IP address");
+				System.out.println("Server was not found");
 			} catch (ConnectException e2) {
-				System.out.println("Please enter the correct port");
+				System.out.println("Unable to connect to the Server");
 			} catch (IOException e3) {
 				e3.printStackTrace();
 			}
@@ -254,11 +299,19 @@ public class ClientWindow extends JFrame {
 						buttonDisconnection.setEnabled(false);
 					}
 				} catch (IOException e1) {
-					e1.printStackTrace();
+					pw.println("Server was not running... shutting down client socket now");
 				}
 			}
 		}
 		
 	}
+
+	// class ChatRoomChange implements ActionListener {
+
+	// 	@Override
+	// 	public void actionPerformed(ActionEvent e){
+	// 		System.out.println("I changed");
+	// 	}
+	// }
 	
 }
