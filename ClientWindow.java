@@ -25,7 +25,7 @@ public class ClientWindow extends JFrame {
 	public static void main(String[] args) {
 		new ClientWindow();
 	}
-
+	
 	private JLabel labelName;
 	private JTextField textName;
 	private JLabel messageName;
@@ -64,9 +64,6 @@ public class ClientWindow extends JFrame {
 		labelRoom = new JLabel("Select Chat Room: ");
 		panelTop.add(labelRoom);
 		panelTop.add(comboBox);
-		
-		
-		
 		
 		textArea = new JTextArea();
 		textArea.setLineWrap(true);
@@ -199,10 +196,10 @@ public class ClientWindow extends JFrame {
 	
 	class Connection implements ActionListener {
 		JTextArea ta;
-
+		
 		Connection(JTextArea ta){
 			this.ta = ta;
-		} 
+		}
 		
 		@Override
 		public void actionPerformed(ActionEvent e) {
