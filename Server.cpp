@@ -58,7 +58,6 @@ public:
     Semaphore protect(portstr);
     //passed to this function is a socket and an array of sockets by reference
     try{
-        //std::cout << "A thread was connected on port "<< port << std::endl;
         socket.Read(data);
         std::string chatRoomNum = data.ToString();
         std::cout << chatRoomNum << std::endl;
@@ -69,9 +68,7 @@ public:
             if(j == 0){
                 break;
             }
-            std::cout << "J: " << j << std::endl;
             std::string recStr = data.ToString();
-            //std::cout << "Messaged received: " << recStr << "on port "<< port << std::endl;
             if(recStr == "shutdown\n") {
                 //get access to semaphore
                 protect.Wait();
@@ -80,7 +77,7 @@ public:
                 //release the semaphore
                 protect.Signal();
                 //break out of the loop
-                std::cout<< "notice to shutdown" << std::endl;
+                std::cout<< "A client has sent notice to shutdown... removing the client" << std::endl;
                 break;
             }
             if(recStr[0]=='/'){
@@ -110,7 +107,7 @@ public:
     catch(std::exception &e){
         std:: cout<< e.what() << std::endl;
     }
-    std::cout<<"exiting a thread on port " << port << std::endl;
+    std::cout<<"exiting a thread on now" << std::endl;
     }
 };
 
@@ -187,6 +184,8 @@ public:
 int main(void) {
     int port = 2020;
     int numberOfRooms;
+    //this is the main driver for the server, it controls the spawning of
+    //a server thread and controls when the server will gracefully terminate
     std::cout << "I am the Server" << std::endl;
     std::cout << "How many chat rooms would you like? Please enter an int" << std::endl;
     std::cin >> numberOfRooms;
@@ -199,13 +198,10 @@ int main(void) {
         if(stopCommand == "done"){
             std::cout<< "I was told to stop" << std::endl;
             server.Shutdown();
-            
             break;
         }
     
     } 
 
     std::cout << "GoodBye!" << std::endl;
-
-    
 }

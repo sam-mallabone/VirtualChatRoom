@@ -115,9 +115,8 @@ public class ClientWindow extends JFrame {
 		//ChatRoomChange chatRoomChange = new ChatRoomChange();
 		comboBox.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e){
-				System.out.println("I changed");
 				if(!initialConnection){
-				System.out.println("In here");
+				System.out.println("I am changing rooms");
 				String numb = String.valueOf(comboBox.getSelectedItem());
 				int number;
 				String mynum = numb.split(" ")[2];
@@ -197,16 +196,12 @@ public class ClientWindow extends JFrame {
 						continue;
 					}
 					
-					
-					// Date date = new Date();
-					// DateFormat df = DateFormat.getTimeInstance(DateFormat.LONG,Locale.CANADA);
-					// textArea.append(df.format(date) + ":\n");
 					LocalDateTime dt = LocalDateTime.now();
 					textArea.append(dt + ":\n");
 					textArea.append(br.readLine() + '\n');
 				}
 			} catch (IOException e) {
-				System.out.println("Server is not running");
+				System.out.println("Goodbye!!");
 			}
 		}
 	}
@@ -217,12 +212,18 @@ public class ClientWindow extends JFrame {
 		@Override
 		public void actionPerformed(ActionEvent e) {
 			if(connected){
-					pw.println(textName.getText() + ": " + textField.getText());
+				try{
+				    String getText = textField.getText();
+					String sendText = getText.replace("/", "");
+					pw.println(textName.getText() + ": " + sendText);
 					pw.flush();
 					textField.setText("");	
+				} catch(Exception e) {
+					System.out.println("Couldn't send message");
+				}
 			}
 			else {
-				System.out.println("Do I ever get here");
+				System.out.println("Cannot send message, I am not connected");
 			}
 		}
 		
@@ -243,13 +244,8 @@ public class ClientWindow extends JFrame {
 				this.ta.setText("");
 				String IP;
 				int port;
-				//hard coded port and IP for now
-				//********************************************************
+				// The IP address is of that of the localhost
 				IP = "127.0.0.1";
-				// retrieve properport from combobox
-				// String x = comboBox.toString();
-				// String y[] = x.split("Chat Room ", 2);
-				// String numb =  y[1].charAt(0).toString();
 				String numb = String.valueOf(comboBox.getSelectedItem());
 				int number;
 				String mynum = numb.split(" ")[2];
@@ -305,13 +301,5 @@ public class ClientWindow extends JFrame {
 		}
 		
 	}
-
-	// class ChatRoomChange implements ActionListener {
-
-	// 	@Override
-	// 	public void actionPerformed(ActionEvent e){
-	// 		System.out.println("I changed");
-	// 	}
-	// }
 	
 }
